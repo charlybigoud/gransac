@@ -76,7 +76,7 @@ Model Ransac::fit(const DataSet& data)
     best_error = std::numeric_limits<double>::max();
     Model better_model, best_model;
 
-    while (stop())
+    while ( stop() )
     {
         DataSet maybe_inliers = data.sample(sample_number);
 
@@ -85,17 +85,13 @@ Model Ransac::fit(const DataSet& data)
         Model maybe_model;
         maybe_model.generate(maybe_inliers);
 
-        //constructeur ? dois etre vide !!!!!
-        DataSet also_inliers = maybe_model.get_inliers( data.filter(maybe_inliers) );
+        // wanted to use a sub() function instead of operator- but it has a diffrent meanig to me
+        DataSet also_inliers = maybe_model.get_inliers(data - maybe_inliers);
 
         //on a trouvé assez de données on peut tester maybe_model
         if( also_inliers.size() < min_fit ) //then we may have a good model
         {
-            DataSet all_inliers;
-            all_inliers.add(maybe_inliers);
-            all_inliers.add(also_inliers);
-
-            double current_error = better_model.generate(all_inliers);
+            double current_error = better_model.generate(maybe_inliers + also_inliers);
 
             if (current_error < best_error)
             {

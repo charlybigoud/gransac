@@ -9,32 +9,19 @@
 
 struct SomePoints
 {
-    const P2DS points;
+    P2DS points;
 
     int size(){ return points.size(); };
 
-    void add(const SomePoints& input)
-    {
-        // std::merge(points.begin(), points.end()
-        //          , input.points.begin(), input.points.end()
-        //          , [](auto& a, auto& b){ return a.x() < b.x(); }
-        //          );
-
-        // for(auto& p : input.points)
-        // {
-        //     points.push_back(p);
-        // }
-    };
-
     //sample n data from the dataset
     SomePoints sample(const int n) const { return SomePoints{}; };
-
-    SomePoints filter(const SomePoints& to_filter) const { return SomePoints{}; };
+    SomePoints operator+(const SomePoints& p) const { return SomePoints{}; };
+    SomePoints operator-(const SomePoints& p) const { return SomePoints{}; };
 };
 
 
 // template<typename Model, typename DataSet>
-// void Ransac::get_model(Model& maybe_model, const DataSet& filtered_data, DataSet& also_inliers)
+// void Ransac::get_model(Model& maybe_model, const DataSet& subed_data, DataSet& also_inliers)
 // {
 //     // for (auto d : data)
 //     // {
@@ -59,7 +46,8 @@ struct Line
     //generate a model according to dataset
     double generate(const SomePoints& p) { return double(); };
 
-    SomePoints get_inliers(const SomePoints& p) const { return SomePoints{}; }
+    // SomePoints get_inliers(const SomePoints& p) const { return SomePoints{}; }
+    SomePoints get_inliers(const SomePoints& p) const { }
 };
 
 int main()
