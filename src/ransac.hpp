@@ -12,11 +12,11 @@ Given:
     min_fit – the number of close data values required to assert that a model fits well to data
 
 Return:
-    bestfit – model parameters which best fit the data (or nul if no good model is found)
+    best_fit – model parameters which best fit the data (or nul if no good model is found)
 
 iterations = 0
-bestfit = nul
-besterr = something really large
+best_fit = nul
+best_error = something really large
 while iterations < max_n
 {
     maybe_inliers = min_n randomly selected values from data
@@ -35,89 +35,75 @@ while iterations < max_n
         % now test how good it is
         bettermodel = model parameters fitted to all points in maybe_inliers and also_inliers
         thiserr = a measure of how well model fits these points
-        if thiserr < besterr
+        if thiserr < best_error
         {
-            bestfit = bettermodel
-            besterr = thiserr
+            best_fit = bettermodel
+            best_error = thiserr
         }
     }
 
     increment iterations
 }
-return bestfit
+return best_fit
 */
 
 struct Ransac
 {
-    int max_iterations;
-    int min_n;
-    int threshold;
-    int min_fit;
+    //constants
+    int max_iterations; // the maximum number of iterations allowed in the algorithm
+    int sample_number; // the minimum number of data values required to fit the model
+    double threshold; // a threshold value for determining when a data point fits a model
+    int min_fit; // the number of close data values required to assert that a model fits well to data
 
-    int iterations;
-    int best_error;
+    //variables
+    int current_iteration;
+    double best_error;
 
-    Ransac();
+    Ransac(const int max_it = 1, const int smp_nbr = 1, const double t = 0.0, const int m_f = 1);
     ~Ransac();
 
-    bool stop(const int it) const;
+    bool stop() const;
 
-    template<typename Model, typename DataType>
-    void get_model(Model& maybe_model, DataType& also_inliers);
-
-    template<typename Model, typename DataType>
-    Model fit(const DataType& data);
+    template<typename Model, typename DataSet>
+    Model fit(const DataSet& data);
 };
 
-template<typename Model, typename DataType>
-void Ransac::get_model(Model& maybe_model, DataType& also_inliers)
-{
-    // for (auto d : data)
-    // {
-    //     if (!is_inside(maybe_inliers, d))
-    //     {
-    //         if (is_fitting(maybe_model, d, threshold) )
-    //         {
-    //             add(also_inliers, d);
-
-    //             if (size(also_inliers) > min_fit)
-    //             {
-    //                 break;
-    //             }
-    //         }
-    //     }
-    // }
-}
-
-template<typename Model, typename DataType>
-Model Ransac::fit(const DataType& data)
+template<typename Model, typename DataSet>
+Model Ransac::fit(const DataSet& data)
 {
     //initiate system
-    iterations = 0;
+    current_iteration = 0;
     best_error = std::numeric_limits<double>::max();
-    Model best_model;
+    Model better_model, best_model;
 
-    while (stop(iterations))
+    while (stop())
     {
-        DataType maybe_inliers = get_sample(data, min_n);
+        DataSet maybe_inliers = data.sample(sample_number);
 
         //recursif ?
         //generer un modèle qui colle avec le set donné
-        Model maybe_model = generate(maybe_inliers);
+        Model maybe_model;
+        maybe_model.generate(maybe_inliers);
 
         //constructeur ? dois etre vide !!!!!
-        DataType also_inliers;
-        empty(also_inliers);
-
-        get_model(maybe_model, also_inliers);
+        DataSet also_inliers = maybe_model.get_inliers( data.filter(maybe_inliers) );
 
         //on a trouvé assez de données on peut tester maybe_model
+        if( also_inliers.size() < min_fit ) //then we may have a good model
+        {
+            DataSet all_inliers;
+            all_inliers.add(maybe_inliers);
+            all_inliers.add(also_inliers);
 
-        ++iterations;
+            double current_error = better_model.generate(all_inliers);
+
+            if (current_error < best_error)
+            {
+                best_model = better_model;
+                best_error = current_error;
+            }
+        }
+
+        ++current_iteration;
     }
 }
-
-// template<typename DataType>
-// template<typename Model>
-// Model Ransac<DataType>::fit(DataType data)
-    // Model m;
