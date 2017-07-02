@@ -51,25 +51,33 @@ struct SomePoints
     SomePoints operator-(const SomePoints& input) const
     {
         P2DS output;
-        for (auto& p : input.points)
+        for (auto& rp : points)
         {
             bool to_filter = false;
-            for (auto& rp : points)
+            for (auto& p : input.points)
             {
                 if ((rp.x() == p.x())
                 and (rp.y() == p.y())
                 )
                     to_filter = true;
-
             }
+
             if (!to_filter)
-                output.push_back(p);
+                output.push_back(rp);
         }
         return SomePoints{output};
     };
 };
 
+auto begin(const SomePoints& p)
+{
+    return begin(p.points);
+}
 
+auto end(const SomePoints& p)
+{
+    return end(p.points);
+}
 
 
 
@@ -91,7 +99,7 @@ struct Line
         b = p.points[d(g)];
     };
 
-    //DEGUEULASSE A CHANGER
+    //DEGUEULASSE A CHANGER (inclure dans ransac ?)
     // prend un set de donnnées
     // pour chaque point du set calcul erreur
     // si le calcul est inf a threshold alors on dit que c'est inliers 
@@ -99,13 +107,15 @@ struct Line
     SomePoints get_inliers(const SomePoints& points, const Error& error, const double threshold_on_error) const
     {
         P2DS out;
-        for (auto& p : points.points)
-        {
-            if ( error(*this, SomePoints{P2DS{p}}) < threshold_on_error )
-            {
-                out.push_back(p);
-            }
-        }
+
+        std::for_each(begin(points)
+                    , end(points)
+                    , [&](auto& a){
+                        if ( error(*this, SomePoints{P2DS{a}}) < threshold_on_error )
+                            out.push_back(a);
+
+                        }
+                    );
 
         return SomePoints{out};
     }
@@ -152,7 +162,7 @@ struct Error
 int main()
 {
     Line ground_truth{ P2D{100.0,-200.0}, P2D{0.0,0.0} };
-    std::cout << "ground_truth slope: " << ground_truth.slope() << std::endl;
+    std::cout << "ground_truth equation: " << ground_truth.slope() << " * x + " << ground_truth.get_y(0) << std::endl;
 
     //generating points around the ground truth
     auto g = std::mt19937{(std::random_device{}())};
@@ -174,7 +184,7 @@ int main()
 
     Error error;
 
-    Ransac ransac(int(1e3), 500, 50, 500);
+    Ransac ransac(int(1e3), 500, 50, 200);
     Line line = ransac.fit<Line>(dataset, error);
 
     std::cout << "ransac ended." << std::endl;
