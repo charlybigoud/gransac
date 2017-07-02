@@ -6,14 +6,43 @@
 
 #include "point.hpp"
 
-struct SomePoints
+struct OperationsOnContainers
 {
-    P2DS points;
+    P2DS merge(const P2DS& a, const P2DS& b) const
+    {
+        P2DS output = a;
+        for (auto& p : b)
+            output.push_back(p);
 
-    size_t size() const { return points.size(); };
+        return output;
+    }
 
+    P2DS filter(const P2DS& reference, const P2DS& data_to_filter) const
+    {
+        P2DS output;
+        for (auto& r : reference)
+        {
+            bool do_filter = false;
+            for (auto& d : data_to_filter)
+            {
+                if ((r.x() == d.x())
+                and (r.y() == d.y())
+                )
+                    do_filter = true;
+            }
+
+            if (!do_filter)
+                output.push_back(r);
+        }
+
+        return output;
+    }
+};
+
+struct Sampling
+{
     //sample n data from the dataset
-    SomePoints sample(const int n) const
+    P2DS operator()(const P2DS& points, const int n) const
     {
         //C++11
         P2DS v1 = points;
@@ -36,50 +65,23 @@ struct SomePoints
         //           , std::mt19937{std::random_device{}()}
         //           );
 
-        return SomePoints{out};
-    };
-
-    SomePoints operator+(const SomePoints& input) const
-    {
-        P2DS output = points;
-        for (auto& p : input.points)
-            output.push_back(p);
-
-        return SomePoints{output};
-    };
-
-    SomePoints operator-(const SomePoints& input) const
-    {
-        P2DS output;
-        for (auto& rp : points)
-        {
-            bool to_filter = false;
-            for (auto& p : input.points)
-            {
-                if ((rp.x() == p.x())
-                and (rp.y() == p.y())
-                )
-                    to_filter = true;
-            }
-
-            if (!to_filter)
-                output.push_back(rp);
-        }
-        return SomePoints{output};
+        return out;
     };
 };
 
-auto begin(const SomePoints& p)
-{
-    return begin(p.points);
-}
+// struct Generator
+// {
+//     //generates (a,b) according to dataset
+//     //BRUTE FORCE takes two points in dataset
+//     void operator()(const P2DS& p)
+//     {
+//         auto g = std::mt19937{(std::random_device{}())};
+//         std::uniform_int_distribution<> d(0, p.size() - 1);
 
-auto end(const SomePoints& p)
-{
-    return end(p.points);
-}
-
-
+//         a = p[d(g)];
+//         b = p[d(g)];
+//     };
+// };
 
 struct Line
 {
@@ -90,13 +92,13 @@ struct Line
 
     //generates (a,b) according to dataset
     //BRUTE FORCE takes two points in dataset
-    void generate(const SomePoints& p)
+    void generate(const P2DS& p)
     {
         auto g = std::mt19937{(std::random_device{}())};
         std::uniform_int_distribution<> d(0, p.size() - 1);
 
-        a = p.points[d(g)];
-        b = p.points[d(g)];
+        a = p[d(g)];
+        b = p[d(g)];
     };
 
     //DEGUEULASSE A CHANGER (inclure dans ransac ?)
@@ -104,20 +106,19 @@ struct Line
     // pour chaque point du set calcul erreur
     // si le calcul est inf a threshold alors on dit que c'est inliers 
     template<typename Error>
-    SomePoints get_inliers(const SomePoints& points, const Error& error, const double threshold_on_error) const
+    P2DS get_inliers(const P2DS& points, const Error& error, const double threshold_on_error) const
     {
         P2DS out;
 
         std::for_each(begin(points)
                     , end(points)
                     , [&](auto& a){
-                        if ( error(*this, SomePoints{P2DS{a}}) < threshold_on_error )
+                        if ( distance(*this, a) < threshold_on_error )
                             out.push_back(a);
-
                         }
                     );
 
-        return SomePoints{out};
+        return out;
     }
 };
 
@@ -135,10 +136,10 @@ double distance(const Line& l, const P2D& p)
          / std::hypot(cy,cx);
 }
 
-double compute_mean_error(const Line& line, const SomePoints& points)
+double compute_mean_error(const Line& line, const P2DS& points)
 {
     double error = 0.0;
-    for (auto& p : points.points)
+    for (auto& p : points)
     {
         error += distance(line, p);
     }
@@ -148,7 +149,7 @@ double compute_mean_error(const Line& line, const SomePoints& points)
 
 struct Error
 {
-    double operator()(const Line& line, const SomePoints& points) const
+    double operator()(const Line& line, const P2DS& points) const
     {
         return compute_mean_error(line, points);
     }
@@ -161,6 +162,20 @@ struct Error
 
 int main()
 {
+//     OperationsOnContainers ooc;
+//     P2DS a{ {0,0},{1,1},{2,2} }
+//     // , b{ {0,0},{2,2} }
+//     , b{ {2,2} }
+//     ;
+//     for (auto& p : a) std::cout << p << ", ";
+//         std::cout << std::endl;
+//         for (auto& p : b) std::cout << p << ", ";
+//         std::cout << std::endl;
+//     P2DS c = ooc.filter(a,b);
+// for (auto& p : c) std::cout << p << ", ";
+//         std::cout << std::endl;
+//     // return 0;
+
     Line ground_truth{ P2D{100.0,-200.0}, P2D{0.0,0.0} };
     std::cout << "ground_truth equation: " << ground_truth.slope() << " * x + " << ground_truth.get_y(0) << std::endl;
 
@@ -176,16 +191,17 @@ int main()
         points.emplace_back(outliers_distrib(g) + x, outliers_distrib(g) + ground_truth.get_y(x));
     }
 
-    SomePoints dataset{points};
-    std::cout << "Dataset:" << std::endl;
-    std::cout << "\tsize: " << dataset.size() << std::endl;
+    // std::cout << "Dataset:" << std::endl;
+    // std::cout << "\tsize: " << points.size() << std::endl;
     // for (auto& p : points)
     //     std::cout << p << std::endl;
 
+    OperationsOnContainers operations;
+    Sampling sampling;
     Error error;
 
     Ransac ransac(int(1e3), 500, 50, 200);
-    Line line = ransac.fit<Line>(dataset, error);
+    Line line = ransac.fit<Line>(points, operations, sampling, error);
 
     std::cout << "ransac ended." << std::endl;
     std::cout << "Line parameters:\n\ta: " << line.a << "\n\tb: " << line.b << std::endl;
