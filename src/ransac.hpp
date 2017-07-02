@@ -6,7 +6,7 @@
 Given:
     data – a set of observed data points
     model – a model that can be fitted to data points
-    min_n – the minimum number of data values required to fit the model
+    sample_number – the minimum number of data values required to fit the model
     max_iterations – the maximum number of iterations allowed in the algorithm
     threshold – a threshold value for determining when a data point fits a model
     min_fit – the number of close data values required to assert that a model fits well to data
@@ -19,7 +19,7 @@ best_fit = nul
 best_error = something really large
 while iterations < max_n
 {
-    maybe_inliers = min_n randomly selected values from data
+    maybe_inliers = sample_number randomly selected values from data
     maybe_model = model parameters fitted to maybe_inliers
     also_inliers = empty set
 
@@ -67,11 +67,20 @@ struct Ransac
 
     ~Ransac();
 
+    // void set_max_iterations();
+
     bool stop() const;
 
     template<typename Model, typename DataSet, typename Error>
     Model fit(const DataSet& data, const Error& error);
 };
+
+// void Ransac::set_max_iterations(const int ratio)
+// {
+//      // p la probabilité que l'algorithme RANSAC pendant une itération sélectionne uniquement des données pertinentes dans l'ensemble des données d'entrée
+    
+//     max_iterations = std::log(1 - p) / std::log(1 - std::pow(ratio, sample_number));
+// }
 
 template<typename Model, typename DataSet, typename Error>
 Model Ransac::fit(const DataSet& data, const Error& error)
