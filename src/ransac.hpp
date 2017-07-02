@@ -78,7 +78,7 @@ struct Ransac
 // void Ransac::set_max_iterations(const int ratio)
 // {
 //      // p la probabilité que l'algorithme RANSAC pendant une itération sélectionne uniquement des données pertinentes dans l'ensemble des données d'entrée
-    
+
 //     max_iterations = std::log(1 - p) / std::log(1 - std::pow(ratio, sample_number));
 // }
 
@@ -99,8 +99,9 @@ Model Ransac::fit(const DataSet& data, const Error& error)
         Model maybe_model;
         maybe_model.generate(maybe_inliers);
 
-        // wanted to use a sub() function instead of operator- but it has a diffrent meanig to me
-        DataSet also_inliers = maybe_model.get_inliers(data - maybe_inliers, error, threshold);
+        // wanted to use a sub() function instead of operator- but it has a different meanig to me
+        DataSet filtered_data = data - maybe_inliers;
+        DataSet also_inliers = maybe_model.get_inliers(filtered_data, error, threshold);
 
         //on a trouvé assez de données on peut tester maybe_model
         if( also_inliers.size() < min_fit ) //then we may have a good model
