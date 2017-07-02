@@ -69,12 +69,12 @@ struct SomePoints
     };
 };
 
-auto begin(const SomePoints& p)
+P2DS::const_iterator begin(const SomePoints& p)
 {
     return begin(p.points);
 }
 
-auto end(const SomePoints& p)
+P2DS::const_iterator end(const SomePoints& p)
 {
     return end(p.points);
 }
