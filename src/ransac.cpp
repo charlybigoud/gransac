@@ -12,5 +12,5 @@ Ransac::~Ransac()
 
 bool Ransac::stop() const
 {
-    return current_iteration > max_iterations;
+    return current_iteration < max_iterations;
 }

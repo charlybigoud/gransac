@@ -59,24 +59,29 @@ struct Ransac
     int current_iteration;
     double best_error;
 
-    Ransac(const int max_it = 1, const int smp_nbr = 1, const double t = 0.0, const int m_f = 1);
+    Ransac(const int max_it = 1
+         , const int smp_nbr = 1
+         , const double t = 0.0
+         , const int m_f = 1
+         );
+
     ~Ransac();
 
     bool stop() const;
 
-    template<typename Model, typename DataSet>
-    Model fit(const DataSet& data);
+    template<typename Model, typename DataSet, typename Error>
+    Model fit(const DataSet& data, const Error& error);
 };
 
-template<typename Model, typename DataSet>
-Model Ransac::fit(const DataSet& data)
+template<typename Model, typename DataSet, typename Error>
+Model Ransac::fit(const DataSet& data, const Error& error)
 {
     //initiate system
     current_iteration = 0;
     best_error = std::numeric_limits<double>::max();
     Model better_model, best_model;
 
-    while ( stop() )
+    while (stop())
     {
         DataSet maybe_inliers = data.sample(sample_number);
 
@@ -86,12 +91,14 @@ Model Ransac::fit(const DataSet& data)
         maybe_model.generate(maybe_inliers);
 
         // wanted to use a sub() function instead of operator- but it has a diffrent meanig to me
-        DataSet also_inliers = maybe_model.get_inliers(data - maybe_inliers);
+        DataSet also_inliers = maybe_model.get_inliers(data - maybe_inliers, error, threshold);
 
         //on a trouvé assez de données on peut tester maybe_model
         if( also_inliers.size() < min_fit ) //then we may have a good model
         {
-            double current_error = better_model.generate(maybe_inliers + also_inliers);
+            DataSet more_inliers = maybe_inliers + also_inliers;
+            better_model.generate(more_inliers);
+            double current_error = error(better_model, more_inliers);
 
             if (current_error < best_error)
             {
@@ -102,4 +109,6 @@ Model Ransac::fit(const DataSet& data)
 
         ++current_iteration;
     }
+
+    return best_model;
 }
