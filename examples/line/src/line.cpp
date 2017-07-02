@@ -154,14 +154,17 @@ int main()
     Line ground_truth{ P2D{100.0,-200.0}, P2D{0.0,0.0} };
     std::cout << "ground_truth slope: " << ground_truth.slope() << std::endl;
 
-
     //generating points around the ground truth
     auto g = std::mt19937{(std::random_device{}())};
-    std::normal_distribution<double> distrib(0, 100.0);
+    std::normal_distribution<double> inliers_distrib(0, 10.0);
+    std::normal_distribution<double> outliers_distrib(0, 100.0);
 
     P2DS points;
     for (double x = -100.0; x < 100.0; x+=.1)
-        points.emplace_back(distrib(g) + x, 0.5 * distrib(g) + ground_truth.get_y(x));
+    {
+        points.emplace_back(inliers_distrib(g) + x, inliers_distrib(g) + ground_truth.get_y(x));
+        points.emplace_back(outliers_distrib(g) + x, outliers_distrib(g) + ground_truth.get_y(x));
+    }
 
     SomePoints dataset{points};
     std::cout << "Dataset:" << std::endl;
@@ -171,7 +174,7 @@ int main()
 
     Error error;
 
-    Ransac ransac(int(1e3), 100, 60, 200);
+    Ransac ransac(int(1e3), 500, 50, 500);
     Line line = ransac.fit<Line>(dataset, error);
 
     std::cout << "ransac ended." << std::endl;
