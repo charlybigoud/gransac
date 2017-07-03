@@ -6,8 +6,10 @@
 
 #include "point.hpp"
 
+//operations to mlanipulate dataset
 struct OperationsOnContainers
 {
+    //merges two dataset and returns the result 
     P2DS merge(const P2DS& a, const P2DS& b) const
     {
         P2DS output = a;
@@ -17,13 +19,14 @@ struct OperationsOnContainers
         return output;
     }
 
-    P2DS filter(const P2DS& reference, const P2DS& data_to_filter) const
+    //filter reference dataset with filter dataset and retruns results 
+    P2DS filter(const P2DS& reference, const P2DS& filter) const
     {
         P2DS output;
         for (auto& r : reference)
         {
             bool do_filter = false;
-            for (auto& d : data_to_filter)
+            for (auto& d : filter)
             {
                 if ((r.x() == d.x())
                 and (r.y() == d.y())
@@ -68,20 +71,6 @@ struct Sampling
         return out;
     };
 };
-
-// struct Generator
-// {
-//     //generates (a,b) according to dataset
-//     //BRUTE FORCE takes two points in dataset
-//     void operator()(const P2DS& p)
-//     {
-//         auto g = std::mt19937{(std::random_device{}())};
-//         std::uniform_int_distribution<> d(0, p.size() - 1);
-
-//         a = p[d(g)];
-//         b = p[d(g)];
-//     };
-// };
 
 struct Line
 {
@@ -162,20 +151,6 @@ struct Error
 
 int main()
 {
-//     OperationsOnContainers ooc;
-//     P2DS a{ {0,0},{1,1},{2,2} }
-//     // , b{ {0,0},{2,2} }
-//     , b{ {2,2} }
-//     ;
-//     for (auto& p : a) std::cout << p << ", ";
-//         std::cout << std::endl;
-//         for (auto& p : b) std::cout << p << ", ";
-//         std::cout << std::endl;
-//     P2DS c = ooc.filter(a,b);
-// for (auto& p : c) std::cout << p << ", ";
-//         std::cout << std::endl;
-//     // return 0;
-
     Line ground_truth{ P2D{100.0,-200.0}, P2D{0.0,0.0} };
     std::cout << "ground_truth equation: " << ground_truth.slope() << " * x + " << ground_truth.get_y(0) << std::endl;
 
